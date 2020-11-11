@@ -4,7 +4,7 @@ import traceback
 
 from bson import json_util
 from hashlib import md5
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from fame.common.config import fame_config
 from fame.core.analysis import Analysis as CoreAnalysis
@@ -62,7 +62,7 @@ class Analysis(CoreAnalysis):
     # Run specific module, should only be executed on celery worker
     def run(self, module_name):
         self.log('debug', "Trying to run {0}".format(module_name))
-        print "Trying to run {0}".format(module_name)
+        print("Trying to run {0}".format(module_name))
 
         # This test prevents multiple execution of the same module
         if self.append_to('executed_modules', module_name):

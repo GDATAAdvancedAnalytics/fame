@@ -83,8 +83,9 @@ class EmailMessage:
             filename = os.path.basename(filepath)
 
         with open(filepath, "rb") as f:
-            part = MIMEApplication(f.read(), Name=os.path.basename(filepath))
-            part['Content-Disposition'] = 'attachment; filename="{0}"'.format(filename)
+            part = MIMEApplication(f.read(), Name=filename)
+            part['Content-Disposition'] = \
+                'attachment; filename="{0}"'.format(filename)
             self.msg.attach(part)
 
     def send(self, to, cc=[], bcc=[]):
@@ -123,8 +124,8 @@ class EmailServer:
                 else:
                     status = self.smtp.noop()[0]
                     self.is_connected = (status == 250)
-            except Exception, e:
-                print e
+            except Exception as e:
+                print(e)
                 self.is_connected = False
         except MissingConfiguration:
             self.is_configured = False

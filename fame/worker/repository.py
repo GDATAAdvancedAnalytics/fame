@@ -4,7 +4,7 @@ import requests
 from time import time
 from git import Repo
 from tempfile import mkdtemp, TemporaryFile
-from urlparse import urljoin
+from urllib.parse import urljoin
 from zipfile import ZipFile
 from io import BytesIO
 
@@ -22,17 +22,17 @@ def refresh_repository(repository_id):
     # load current module blob from remote
     url = urljoin(fame_config.fame_url, '/modules/download')
     try:
-        print "[+] Get current modules"
+        print("[+] Get current modules")
         response = requests.get(
             url, stream=True, headers={'X-API-KEY': fame_config.api_key})
         response.raise_for_status()
 
-        print "[+] Extract modules"
+        print("[+] Extract modules")
         module_tempdir = mkdtemp()
         with ZipFile(BytesIO(response.content), 'r') as zipf:
             zipf.extractall(module_tempdir)
 
-        print "[+] Constructing git repository path"
+        print("[+] Constructing git repository path")
         repo_path = os.path.join(module_tempdir, repository['name'])
 
         success = False
@@ -42,7 +42,7 @@ def refresh_repository(repository_id):
             if os.path.isdir(repo_path):
                 if len(os.listdir(repo_path)) == 0:
                     # directory empty
-                    print "[+] Cloning into existing directory"
+                    print("[+] Cloning into existing directory")
                     repository['status'] = 'cloning'
                     repository.save()
                     success = repository.do_clone(path=repo_path)
@@ -52,28 +52,28 @@ def refresh_repository(repository_id):
 
                     # path contains .git folder -> pull
                     if os.path.exists(git_folder) and os.path.isdir(git_folder):  # noqa
-                        print "[+] Pulling latest changes"
+                        print("[+] Pulling latest changes")
                         repository['status'] = 'pulling'
                         repository.save()
                         success = repository.do_pull(path=repo_path)
                     else:
-                        raise "Took unexpected path in program logic!"
+                        raise Exception("Took unexpected path in program logic!")
 
             else:
-                raise "Path exists but is not a directory"
+                raise Exception("Path exists but is not a directory")
         else:
             # directory empty
-            print "[+] Cloning new repository"
+            print("[+] Cloning new repository")
             repository['status'] = 'cloning'
             repository.save()
             success = repository.do_clone(path=repo_path)
 
         if not success:
             # Error was set by do_pull/do_clone
-            print "[E] Could not update repository"
+            print("[E] Could not update repository")
             return
 
-        print "[+] Zipping files up"
+        print("[+] Zipping files up")
         with TemporaryFile() as tempf:
             with ZipFile(tempf, 'w') as zipf:
                 for root, dirs, files in os.walk(repo_path):
@@ -84,7 +84,7 @@ def refresh_repository(repository_id):
                             zipf.write(
                                 filepath, os.path.relpath(filepath, repo_path))
 
-            print "[+] Putting files to web server"
+            print("[+] Putting files to web server")
             url = urljoin(
                 fame_config.fame_url,
                 '/modules/repository/{}/update'.format(repository['_id']))
@@ -102,9 +102,9 @@ def refresh_repository(repository_id):
         repository['status'] = 'error'
         repository['error_msg'] = e.message
         repository.save()
-        print "[E] Could not update repository: {}".format(e.message)
+        print("[E] Could not update repository: {}".format(e.message))
     else:
-        print "[*] Job success"
+        print("[*] Job success")
 
 
 class Repository(CoreRepository):
@@ -115,7 +115,7 @@ class Repository(CoreRepository):
         super(Repository, self).__init__(values)
 
     def do_clone(self, path=None):
-        print "[+] Cloning '{}'".format(self['name'])
+        print("[+] Cloning '{}'".format(self['name']))
         try:
             if self['private']:
                 Repo.clone_from(self['address'], path or self.path(),
@@ -126,15 +126,14 @@ class Repository(CoreRepository):
             internals = Internals.get(name="updates")
             internals.update_value("last_update", time())
             return True
-
-        except Exception, e:
+        except Exception as e:
             self['status'] = 'error'
             self['error_msg'] = 'Could not clone repository, probably due to authentication issues.\n{}'.format(e)  # noqa
             self.save()
             return False
 
     def do_pull(self, path=None):
-        print "[+] Pulling '{}'".format(self['name'])
+        print("[+] Pulling '{}'".format(self['name']))
         try:
             repo = Repo(path or self.path())
 
@@ -150,13 +149,13 @@ class Repository(CoreRepository):
                 for f in files:
                     f = os.path.join(root, f)
                     if f.endswith(".pyc") and not os.path.exists(f[:-1]):
-                        print "Deleting orphan file '{}'".format(f)
+                        print("Deleting orphan file '{}'".format(f))
                         os.remove(f)
 
             updates = Internals.get(name="updates")
             updates.update_value("last_update", time())
             return True
-        except Exception, e:
+        except Exception as e:
             self['status'] = 'error'
             self['error_msg'] = 'Could not update repository.\n{}'.format(e)
             self.save()

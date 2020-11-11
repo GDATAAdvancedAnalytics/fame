@@ -155,8 +155,8 @@ class ModuleDispatcher(object):
                 m = m()
                 if m and m.initialize():
                     self._modules[module['type']].append(m)
-            except Exception, e:
-                print "Could not initialize module '{0}': {1}".format(module['name'], e)
+            except Exception as e:
+                print("Could not initialize module '{0}': {1}".format(module['name'], e))
 
     def add_virtualization_module(self, module):
         m = get_class(module['path'], module['class'])
@@ -184,8 +184,8 @@ class ModuleDispatcher(object):
                     else:
                         for acts_on in module['acts_on']:
                             add_one(acts_on, m)
-            except Exception, e:
-                print "Could not initialize module '{0}': {1}".format(module['name'], e)
+            except Exception as e:
+                print("Could not initialize module '{0}': {1}".format(module['name'], e))
 
     def add_processing_module(self, module):
         m = get_class(module['path'], module['class'])
@@ -286,7 +286,7 @@ class ModuleDispatcher(object):
 
             # Ignore duplicates
             if module_info and not module_info['path'].startswith('fame.modules.{}.'.format(repository['name'])):
-                print "Duplicate name '{}', ignoring module.".format(module.name)
+                print("Duplicate name '{}', ignoring module.".format(module.name))
                 return None
 
             # Handle named configs
@@ -337,6 +337,13 @@ class ModuleDispatcher(object):
                 if repository is None or name.startswith('fame.modules.{}.'.format(repository['name'])):
                     try:
                         module = importlib.import_module(name)
+
+                        # if module is already imported, we need to
+                        # explicitly reload it. To not break things, we just
+                        # import-and-reload the module to make sure we have
+                        # the most recent version both on disk and in memory
+                        module = importlib.reload(module)
+
                         for _, obj in inspect.getmembers(module, inspect.isclass):
                             if issubclass(obj, Module):
                                 yield name, obj
@@ -360,7 +367,7 @@ class ModuleDispatcher(object):
 
         # Delete all modules that are no longer in the repository
         for missing_module in installed_modules:
-            print "Deleting '{}'".format(missing_module)
+            print("Deleting '{}'".format(missing_module))
             ModuleInfo.get_collection().remove({'name': missing_module})
 
         # Disable all modules that have incomplete named configs
@@ -371,7 +378,7 @@ class ModuleDispatcher(object):
                         info = ModuleInfo.get(name=obj.name)
 
                         if info['enabled']:
-                            print "Disabling {} for incomplete named config {}".format(obj.name, updated_named_config['name'])
+                            print("Disabling {} for incomplete named config {}".format(obj.name, updated_named_config['name']))
                             info.update_value('enabled', False)
 
     # Return the first direct transform that is not in the excluded modules

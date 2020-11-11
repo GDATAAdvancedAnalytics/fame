@@ -3,7 +3,7 @@ from io import BytesIO
 from shutil import move, rmtree
 from time import time
 from zipfile import ZipFile
-from flask import url_for, request, flash
+from flask import url_for, request, flash, make_response
 from flask_classy import FlaskView, route
 from uuid import uuid4
 from markdown2 import markdown
@@ -268,7 +268,7 @@ class ModulesView(FlaskView, UIView):
         module_class.info = module
         try:
             module_class()
-        except MissingConfiguration, e:
+        except MissingConfiguration as e:
             if e.name:
                 flash("You must configure '{}' before trying to enable '{}'".format(e.name, module['name']), 'warning')
                 return validation_error(url_for('ModulesView:configuration', id=e.id))
@@ -467,10 +467,10 @@ class ModulesView(FlaskView, UIView):
             rmtree(backup_path)
 
             return make_response('', 204)  # no response
-        except Exception, e:
-            print "[E] Could not update repository {}: {}".format(
-                repository['name'], e)
-            print "[E] Restoring previous version"
+        except Exception as e:
+            print("[E] Could not update repository {}: {}".format(
+                repository['name'], e))
+            print("[E] Restoring previous version")
             rmtree(repository.path())
             move(backup_path, repository.path())
 

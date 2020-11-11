@@ -253,11 +253,11 @@ class File(MongoDict):
                 if known_type:
                     self['type'] = known_type
                     break
-            except:
+            except Exception:
                 pass
 
     def _store_file(self, filename, stream):
-        self['filepath'] = u'{0}/{1}'.format(self['sha256'], filename)
+        self['filepath'] = '{0}/{1}'.format(self['sha256'], filename)
         self['filepath'] = os.path.join(fame_config.storage_path, self['filepath'])
 
         # Create parent dirs if they don't exist
@@ -277,4 +277,4 @@ class File(MongoDict):
                     break
 
 # For cyclic imports
-from fame.core.analysis import Analysis
+from fame.core.analysis import Analysis  # noqa

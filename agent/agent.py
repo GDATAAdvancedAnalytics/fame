@@ -9,6 +9,7 @@ from shutil import copyfileobj
 from importlib import import_module
 from multiprocessing import Queue, Process
 from flask import Flask, jsonify, request, abort, make_response
+import imp
 
 
 AGENT_ROOT = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +22,10 @@ sys.path.append(AGENT_ROOT)
 
 
 def is_iterable(element):
-    return isinstance(element, collections.Iterable) and not isinstance(element, basestring)
+    return (
+        isinstance(element, collections.Iterable) and
+        not isinstance(element, str)
+    )
 
 
 def iterify(element):
@@ -76,7 +80,8 @@ class IsolatedModule:
             pass
 
         def __getattr(self, name):
-            self.log('error', "'{}' is not available in IsolatedProcessingModule")
+            self.log('error',
+                     "'{}' is not available in IsolatedProcessingModule")
 
         def log(self, level, message):
             self._results['logs'].append((level, message))
@@ -113,7 +118,7 @@ class IsolatedModule:
         def run_each_with_type(self, target, target_type):
             try:
                 return self.each_with_type(target, target_type)
-            except IsolatedExceptions.ModuleExecutionError, e:
+            except IsolatedExceptions.ModuleExecutionError as e:
                 self.log("error", "Could not run on %s: %s" % (target, e))
                 self.log("debug", traceback.format_exc())
                 return False
@@ -158,7 +163,7 @@ class Worker:
         self.queue = None
 
     def new_task(self):
-        self.current_task = str(uuid4()).encode('hex')
+        self.current_task = uuid4().hex
         return self.current_task
 
     def is_valid_task_id(self, task_id):
@@ -166,7 +171,7 @@ class Worker:
 
     def set_module(self, name, config):
         if 'module' in sys.modules:
-            module = reload(sys.modules['module'])
+            module = imp.reload(sys.modules['module'])
         else:
             module = import_module('module')
 
@@ -184,7 +189,8 @@ class Worker:
         return self.module
 
     def each(self, target, file_type):
-        self.process = Process(target=run_module, args=(self.queue, self.module, target, file_type))
+        self.process = Process(target=run_module, args=(
+            self.queue, self.module, target, file_type))
         self.process.start()
 
     def is_ready(self):
@@ -247,7 +253,7 @@ def module_update_info(task_id):
     try:
         worker.set_module(name, config)
         return jsonify({'status': 'ok'})
-    except Exception, e:
+    except Exception as e:
         return jsonify({'status': 'error', 'error': str(e)})
 
 

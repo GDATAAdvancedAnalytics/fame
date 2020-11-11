@@ -1,4 +1,4 @@
-FROM python:2-slim-stretch
+FROM python:3.7-slim-buster
 
 RUN apt-get update && apt-get install -y git libmagic1 && \
     useradd -s /bin/false -U fame -m && \

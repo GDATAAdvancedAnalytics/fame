@@ -1,6 +1,6 @@
 import os
 import requests
-from StringIO import StringIO
+from io import StringIO
 from shutil import copyfileobj
 from hashlib import md5
 from pymongo import DESCENDING
@@ -50,7 +50,7 @@ def get_options():
             else:
                 options[option] = value
 
-    for option in dispatcher.options['bool'].keys() + ['magic_enabled']:
+    for option in list(dispatcher.options['bool'].keys()) + ['magic_enabled']:
         value = request.form.get("options[{}]".format(option))
         options[option] = (value is not None) and (value not in ['0', 'False'])
 
@@ -176,8 +176,8 @@ class AnalysesView(FlaskView, UIView):
 
     def _get_object_to_analyze(self):
         file = request.files.get('file') or None
-        url = request.form.get('url') or None
-        hash = request.form.get('hash') or None
+        url = request.form.get('url').strip() or None
+        hash = request.form.get('hash').strip() or None
 
         f = None
         if file:

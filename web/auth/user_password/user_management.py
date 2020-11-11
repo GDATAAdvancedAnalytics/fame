@@ -1,3 +1,4 @@
+import codecs
 import os
 from itsdangerous import TimestampSigner
 from flask_login import login_user, make_secure_token
@@ -9,7 +10,7 @@ from web.views.helpers import user_if_enabled
 
 
 def auth_token(user):
-    return os.urandom(12).encode('hex') + make_secure_token(user['email'] + user['pwd_hash'])
+    return codecs.encode(os.urandom(12), 'hex').decode() + make_secure_token(user['email'] + user['pwd_hash'])
 
 
 def password_reset_token(user):
@@ -21,14 +22,14 @@ def password_reset_token(user):
 def validate_password_reset_token(token):
     signer = TimestampSigner(fame_config.secret_key)
 
-    return signer.unsign(token, max_age=86400)
+    return signer.unsign(token, max_age=86400).decode()
 
 
 def create_user(name, email, groups, default_sharing, permissions, password=None):
     user = User.get(email=email.lower())
 
     if user:
-        print "/!\ User with this email address already exists."
+        print("/!\ User with this email address already exists.")
     else:
         user = User({
             'name': name,
@@ -41,10 +42,10 @@ def create_user(name, email, groups, default_sharing, permissions, password=None
         if password:
             user['pwd_hash'] = generate_password_hash(password)
         user.save()
-        print "[+] User created."
+        print("[+] User created.")
 
         user.generate_avatar()
-        print "[+] Downloaded avatar."
+        print("[+] Downloaded avatar.")
 
     return user
 

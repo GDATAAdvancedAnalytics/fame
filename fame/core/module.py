@@ -5,7 +5,7 @@ import traceback
 
 from copy import copy
 from time import sleep
-from urlparse import urljoin
+from urllib.parse import urljoin
 from datetime import datetime, timedelta
 
 from fame.common.constants import MODULES_ROOT
@@ -119,7 +119,7 @@ class ModuleInfo(MongoDict):
     def _update_diffed_value(self, name, value):
         if is_iterable(value):
             self._init_list_diff(name)
-            self[name] = value
+            self[name] = copy(value)
 
             if name in self['diffs']:
                 new_removed = []
@@ -138,7 +138,7 @@ class ModuleInfo(MongoDict):
 
                 self['diffs'][name]['added'] = new_added
         else:
-            self[name] = value
+            self[name] = copy(value)
             if name in self['diffs']:
                 if self['diffs'][name] == value:
                     del self['diffs'][name]
@@ -491,15 +491,15 @@ class ProcessingModule(Module):
     def _try_each(self, target, file_type):
         try:
             if file_type == 'url':
-                with open(target, 'rb') as fd:
+                with open(target, 'r') as fd:
                     target = fd.read()
 
             return self.each_with_type(target, file_type)
-        except ModuleExecutionError, e:
+        except ModuleExecutionError as e:
             self.log("debug", traceback.format_exc())
             self.log("error", "Could not run on %s: %s" % (target, e))
             return False
-        except Exception, e:
+        except Exception as e:
             self.log("debug", traceback.format_exc())
             self.log("error", "Could not run on %s.\n %s" % (target, e))
             return False
@@ -616,7 +616,7 @@ class IsolatedProcessingModule(ProcessingModule):
             response.raise_for_status()
 
             return response
-        except Exception, e:
+        except Exception as e:
             raise ModuleExecutionError("Error communicating with agent ({}): {}".format(path, e))
 
     def _get(self, path, **kwargs):
@@ -922,7 +922,7 @@ class ThreatIntelligenceModule(Module):
         """
         methods = [self.iocs_submission, self.ioc_submission]
         for method in methods:
-            for cls in inspect.getmro(method.im_class):
+            for cls in inspect.getmro(method.__self__.__class__):
                 if method.__name__ in cls.__dict__:
                     if cls.__name__ != 'ThreatIntelligenceModule':
                         return True
@@ -1167,11 +1167,11 @@ class PreloadingModule(Module):
             self._analysis = analysis
             self.init_options(analysis['options'])
             return self.preload(self._analysis.get_main_file())
-        except ModuleExecutionError, e:
+        except ModuleExecutionError as e:
             self.log("error", "Could not run on %s: %s" % (
                 self._analysis.get_main_file(), e))
             return False
-        except:
+        except Exception:
             tb = traceback.format_exc()
             self.log("error", "Exception occurred while execting module on %s.\n %s" % (
                 self._analysis.get_main_file(), tb))

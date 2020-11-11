@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 import os
 import jinja2
@@ -7,7 +7,7 @@ from bson import ObjectId
 from datetime import datetime
 from flask import Flask, redirect, request, url_for
 from flask_login import LoginManager
-from werkzeug.urls import url_encode
+from werkzeug import url_encode
 from importlib import import_module
 
 from fame.core import fame_init
@@ -26,7 +26,7 @@ from web.views.helpers import user_if_enabled
 try:
     fame_init()
 except:
-    print "/!\\ Could not connect to MongoDB database."
+    print("/!\\ Could not connect to MongoDB database.")
 
 app = Flask(__name__, template_folder='web/templates', static_folder='web/static')
 app.secret_key = fame_config.secret_key
@@ -50,7 +50,12 @@ app.register_blueprint(auth_module.auth)
 
 @login_manager.user_loader
 def load_user(user_id):
-    return user_if_enabled(User.get(_id=ObjectId(user_id)))
+    try:
+        user = user_if_enabled(User.get(_id=ObjectId(user_id)))
+    except TypeError:
+        user = user_if_enabled(User.get(_id=ObjectId(user_id.decode())))
+
+    return user
 
 
 @login_manager.token_loader
@@ -84,7 +89,7 @@ def to_json(value):
 def smart_join(value, separator=", "):
     if value is None:
         return ''
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         return value
     else:
         return separator.join(value)

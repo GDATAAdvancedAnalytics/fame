@@ -5,13 +5,12 @@ from uuid import uuid4
 from datetime import datetime
 from shutil import copyfileobj
 from werkzeug.utils import secure_filename
-from rfc6266 import parse_requests_response
 
 from fame.common.config import fame_config
 
 
 def is_iterable(element):
-    return isinstance(element, collections.Iterable) and not isinstance(element, basestring)
+    return isinstance(element, collections.Iterable) and not isinstance(element, str)
 
 
 def iterify(element):
@@ -23,12 +22,12 @@ def iterify(element):
 
 def u(string):
     try:
-        return unicode(string)
+        return str(string)
     except UnicodeDecodeError:
         try:
-            return unicode(string, 'latin-1')
+            return str(string, 'latin-1')
         except UnicodeDecodeError:
-            return unicode(string, errors='replace')
+            return str(string, errors='replace')
 
 
 def get_class(module, klass):
@@ -64,7 +63,7 @@ def ordered_list_value(list_of_values):
 
 
 def unique_for_key(l, key):
-    return {d[key]: d for d in l}.values()
+    return list({d[key]: d for d in l}.values())
 
 
 def tempdir(prefix=None):
@@ -81,10 +80,15 @@ def tempdir(prefix=None):
     return tempdir
 
 
+def get_attachment_filename(response):
+    content_disposition = response.headers.get("content-disposition")
+    filename = content_disposition.split("filename=")[1]
+    return filename
+
+
 def save_response(response):
     tmp = tempdir()
-    filename = secure_filename(
-        parse_requests_response(response).filename_unsafe)
+    filename = secure_filename(get_attachment_filename(response))
     filepath = os.path.join(tmp, filename)
 
     with open(filepath, 'wb') as out:

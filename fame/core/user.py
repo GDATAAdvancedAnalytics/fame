@@ -1,3 +1,4 @@
+import codecs
 import os
 import requests
 from base64 import b64encode
@@ -57,13 +58,13 @@ class User(MongoDict):
     def generate_avatar(self):
         s = b64encode(os.urandom(64))
         try:
-            response = requests.get("https://robohash.org/{}.png".format(s))
+            response = requests.get("https://robohash.org/{}.png".format(s), stream=True)
             response.raise_for_status()
-            with open(os.path.join(AVATARS_ROOT, "{}.png".format(self['_id'])), 'w') as f:
-                f.write(response.content)
+            with open(os.path.join(AVATARS_ROOT, "{}.png".format(self['_id'])), 'wb') as f:
+                f.write(response.raw.read())
         except Exception:
-            print "Could not generate avatar for {}".format(self['email'])
+            print("Could not generate avatar for {}".format(self['email']))
 
     @staticmethod
     def generate_api_key():
-        return os.urandom(40).encode('hex')
+        return codecs.encode(os.urandom(40), 'hex').decode()

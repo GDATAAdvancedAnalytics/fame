@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Taken from: http://code.activestate.com/recipes/576655-wait-for-network-service-to-appear/
 """
@@ -45,7 +45,7 @@ def wait_net_service(server, port, timeout=None):
 
 if __name__ == "__main__":
     if len(sys.argv) not in [3, 4]:
-        print "Usage: %s <host> <port> [<timeout>]" % (sys.argv[0])
+        print("Usage: %s <host> <port> [<timeout>]" % (sys.argv[0]))
         sys.exit(1)
 
     timeout = 60

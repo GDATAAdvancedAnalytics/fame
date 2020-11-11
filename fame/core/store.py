@@ -1,4 +1,4 @@
-from urllib import quote_plus
+from urllib.parse import quote_plus
 from pymongo import MongoClient, TEXT
 
 from fame.common.config import fame_config

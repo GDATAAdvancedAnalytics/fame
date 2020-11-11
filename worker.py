@@ -1,24 +1,25 @@
-from __future__ import print_function
-import os
-import sys
-import signal
+#!/usr/bin/env python3
 import argparse
-import requests
-from urlparse import urljoin
-from socket import gethostname
-from BytesIO import BytesIO
-from zipfile import ZipFile
+import os
+import signal
+import sys
+from io import BytesIO
 from shutil import move, rmtree
+from socket import gethostname
+from subprocess import STDOUT, CalledProcessError, Popen, check_output
+from time import sleep, time
+from urllib.parse import urljoin
 from uuid import uuid4
-from time import time, sleep
-from subprocess import Popen, check_output, STDOUT, CalledProcessError
+from zipfile import ZipFile
 
-from fame.core import fame_init
-from fame.core.module import ModuleInfo
-from fame.core.internals import Internals
+import requests
+
 from fame.common.config import fame_config
 from fame.common.constants import MODULES_ROOT
 from fame.common.pip import pip_install
+from fame.core import fame_init
+from fame.core.internals import Internals
+from fame.core.module import ModuleInfo
 from fame.core.user import User
 
 UNIX_INSTALL_SCRIPTS = {
@@ -48,13 +49,16 @@ class Worker:
         # Module updates are only needed for remote workers
         if fame_config.is_worker:
             # First, backup current code
-            backup_path = os.path.join(fame_config.temp_path, 'modules_backup_{}'.format(uuid4()))
+            backup_path = os.path.join(fame_config.temp_path,
+                                       'modules_backup_{}'.format(uuid4()))
             move(MODULES_ROOT, backup_path)
 
             # Replace current code with code fetched from web server
             url = urljoin(fame_config.fame_url, '/modules/download')
             try:
-                response = requests.get(url, stream=True, headers={'X-API-KEY': fame_config.api_key})
+                response = requests.get(url, stream=True, headers={
+                    'X-API-KEY': fame_config.api_key
+                })
                 response.raise_for_status()
 
                 os.makedirs(MODULES_ROOT)
@@ -63,7 +67,7 @@ class Worker:
 
                 rmtree(backup_path)
                 print("Updated modules.")
-            except Exception, e:
+            except Exception as e:
                 print("Could not update modules: '{}'".format(e))
                 print("Restoring previous version")
                 move(backup_path, MODULES_ROOT)
@@ -95,7 +99,8 @@ class Worker:
         requirements = self._module_requirements(module)
 
         if requirements:
-            print("Installing requirements for '{}' ({})".format(module['name'], requirements))
+            print("Installing requirements for '{}' ({})".format(
+                module['name'], requirements))
 
             rcode, output = pip_install('-r', requirements)
 
@@ -108,12 +113,15 @@ class Worker:
 
         for script, cwd in scripts:
             try:
-                print("Launching installation script '{}'".format(' '.join(script)))
+                print("Launching installation script '{}'".format(
+                    ' '.join(script)))
                 check_output(script, stderr=STDOUT, cwd=cwd)
-            except CalledProcessError, e:
-                self._module_installation_error(' '.join(script), module, e.output)
-            except Exception, e:
-                self._module_installation_error(' '.join(script), module, e)
+            except CalledProcessError as e:
+                self._module_installation_error(
+                    ' '.join(script), module, e.output)
+            except Exception as e:
+                self._module_installation_error(
+                    ' '.join(script), module, e)
 
     def _module_installation_error(self, cmd, module, errors):
         errors = "{}: error on '{}':\n\n{}".format(cmd, gethostname(), errors)
@@ -159,7 +167,7 @@ class Worker:
                 if (current_time - file_mtime) > (7 * 24 * 3600):
                     try:
                         os.remove(filepath)
-                    except:
+                    except OSError:
                         pass
 
             for d in dirs:
@@ -167,7 +175,7 @@ class Worker:
 
                 try:
                     os.rmdir(dirpath)
-                except:
+                except OSError:
                     pass
 
     def start(self):
@@ -203,8 +211,10 @@ class Worker:
                     pass
 
     def _new_celery_worker(self):
-        return Popen(['celery', '-A', 'fame.core.celeryctl', 'worker', '-Q', ','.join(self.queues)] + self.celery_args,
+        return Popen(['celery', '-A', 'fame.core.celeryctl', 'worker', '-Q',
+                      ','.join(self.queues)] + self.celery_args,
                      stdout=sys.stdout, stderr=sys.stderr)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Launches a FAME worker.')
@@ -213,7 +223,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--celery_args', type=str, default='',
                         help='Additional arguments for the celery worker.')
     parser.add_argument('-r', '--refresh_interval', type=int, default=30,
-                        help='Frequency at which the worker will check for updates.')
+                        help='Frequency at which the worker will check for updates.')  # noqa
 
     args = parser.parse_args()
 

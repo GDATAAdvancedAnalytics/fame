@@ -39,7 +39,7 @@
                 <div class="form-group">
                     <label class="col-sm-2 control-label">Permissions</label>
                     <div class="col-sm-8">
-                        {% for permission, description in data.permissions.iteritems() %}
+                        {% for permission, description in data.permissions.items() %}
                             <label class="checkbox checkbox-inline">
                                 <input type="checkbox" name="permission_{{permission}}" {% if user and permission in user.permissions %}checked{% endif %} data-toggle="checkbox">{{permission}}
                             </label>

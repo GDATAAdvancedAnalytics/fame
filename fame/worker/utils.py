@@ -1,12 +1,12 @@
 import requests
 
-from urlparse import urljoin
+from urllib.parse import urljoin
 
 from fame.common.config import fame_config
 
 
 def send_file_to_remote(file, url):
-    if isinstance(file, basestring):
+    if isinstance(file, str):
         file = open(file, 'rb')
 
     url = urljoin(fame_config.fame_url, url)
