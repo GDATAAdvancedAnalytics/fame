@@ -53,7 +53,7 @@ services:
       FAME_ADMIN_PERMISSIONS: "*"
       FAME_ADMIN_PASSWORD: "secret"
       FAME_PUBLIC_KEY: "ssh-rsa ..."
-      FAME_SECRET_KEY: "<ssh secret key>"
+      FAME_SECRET_KEY: "<flask session secret key>"
       FAME_AUTHENTICATION_TYPE: "user_password"
       # LDAP_URI: "ldap://example.com"
       # LDAP_USER: "ldap-user"
